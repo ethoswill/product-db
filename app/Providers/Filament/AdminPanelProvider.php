@@ -68,6 +68,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make('Tasks'),
                 NavigationGroup::make('Design Tools'),
+                NavigationGroup::make('Creative'),
                 NavigationGroup::make('Mockups'),
                 NavigationGroup::make('In House Print'),
                 NavigationGroup::make('Embroidery'),
@@ -85,6 +86,12 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Admin'),
             ])
             ->navigationItems([
+                NavigationItem::make('Creative')
+                    ->group('Creative')
+                    ->icon('heroicon-o-paint-brush')
+                    ->url(fn (): string => \App\Filament\Pages\Creative::getUrl())
+                    ->sort(0)
+                    ->visible(fn (): bool => auth()->check()),
                 NavigationItem::make('Patches')
                     ->group('Patches')
                     ->icon('heroicon-o-squares-2x2')
@@ -97,12 +104,6 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn (): string => \App\Filament\Resources\MockupsSubmissionResource::getUrl('index'))
                     ->sort(1)
                     ->visible(fn (): bool => auth()->check() && auth()->user()->hasPermission('mockups.submissions.view')),
-                NavigationItem::make('Inventory')
-                    ->group('Inventory')
-                    ->icon('heroicon-o-cube')
-                    ->url(fn (): string => \App\Filament\Pages\Inventory::getUrl())
-                    ->sort(0)
-                    ->visible(fn (): bool => auth()->check()),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
@@ -111,10 +112,10 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 \App\Filament\Pages\CustomDashboard::class,
                 \App\Filament\Pages\ProfileSettings::class,
+                \App\Filament\Pages\Creative::class,
                 \App\Filament\Pages\ManageDtfInHousePrints::class,
                 \App\Filament\Pages\QuickCadBuilder::class,
                 \App\Filament\Pages\PoSubmission::class,
-                \App\Filament\Pages\Inventory::class,
             ])
             ->userMenuItems([
                 'profile' => MenuItem::make()

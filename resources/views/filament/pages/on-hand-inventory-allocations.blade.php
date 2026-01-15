@@ -1,9 +1,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Inventory by Shelf</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">On Hand Inventory Allocations</h2>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                View inventory quantities organized by shelf location.
+                Track all inventory allocations and assignments to order numbers.
             </p>
         </div>
 
@@ -14,7 +14,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="search"
-                        placeholder="Search by shelf name or Ethos ID..."
+                        placeholder="Search by product name, order number, or size..."
                         class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:text-sm"
                     />
                 </div>
@@ -22,67 +22,32 @@
         </div>
         
         @php
-            $inventoryData = $this->getInventoryData();
+            $allocations = $this->getAllocations();
         @endphp
 
-        @if(empty($inventoryData))
+        @if($allocations->isEmpty())
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <p class="text-gray-600 dark:text-gray-400 text-center py-8">
                     @if(!empty($this->search))
-                        No inventory found matching your search. Try a different search term.
+                        No allocations found matching your search.
                     @else
-                        No inventory found. Add garments with variants assigned to shelves to see inventory here.
+                        No inventory allocations found. Assign inventory to orders to see them here.
                     @endif
                 </p>
             </div>
         @else
-            {{-- Bulk Actions Bar --}}
-            @if(!empty($this->selectedRows))
-                <div class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700 rounded-lg p-4 mb-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {{ count($this->selectedRows) }} item(s) selected
-                            </span>
-                            <button
-                                wire:click="$set('selectedRows', [])"
-                                class="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 underline"
-                            >
-                                Clear Selection
-                            </button>
-                        </div>
-                        <button
-                            wire:click="exportInventoryReport"
-                            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors flex items-center gap-2"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Export Inventory Report
-                        </button>
-                    </div>
-                </div>
-            @endif
-
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-900">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider w-12">
-                                    <input
-                                        type="checkbox"
-                                        wire:model.live="selectAll"
-                                        class="w-4 h-4 rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900"
-                                    />
-                                </th>
                                 <th 
-                                    wire:click="sortBy('location')"
+                                    wire:click="sortBy('order_number')"
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
                                     <div class="flex items-center gap-2">
-                                        Location
-                                        @if($this->sortColumn === 'location')
+                                        Order Number
+                                        @if($this->sortColumn === 'order_number')
                                             @if($this->sortDirection === 'asc')
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -96,12 +61,12 @@
                                     </div>
                                 </th>
                                 <th 
-                                    wire:click="sortBy('shelf_name')"
+                                    wire:click="sortBy('product_name')"
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
                                     <div class="flex items-center gap-2">
-                                        Shelf
-                                        @if($this->sortColumn === 'shelf_name')
+                                        Product Name
+                                        @if($this->sortColumn === 'product_name')
                                             @if($this->sortDirection === 'asc')
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -115,31 +80,12 @@
                                     </div>
                                 </th>
                                 <th 
-                                    wire:click="sortBy('variant_name')"
+                                    wire:click="sortBy('product_size')"
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
                                     <div class="flex items-center gap-2">
-                                        Variant
-                                        @if($this->sortColumn === 'variant_name')
-                                            @if($this->sortDirection === 'asc')
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                                </svg>
-                                            @else
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            @endif
-                                        @endif
-                                    </div>
-                                </th>
-                                <th 
-                                    wire:click="sortBy('ethos_id')"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        Ethos ID
-                                        @if($this->sortColumn === 'ethos_id')
+                                        Size
+                                        @if($this->sortColumn === 'product_size')
                                             @if($this->sortDirection === 'asc')
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -171,41 +117,108 @@
                                         @endif
                                     </div>
                                 </th>
+                                <th 
+                                    wire:click="sortBy('user.name')"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        Assigned By
+                                        @if($this->sortColumn === 'user.name')
+                                            @if($this->sortDirection === 'asc')
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                            @else
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </th>
+                                <th 
+                                    wire:click="sortBy('created_at')"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        Date Assigned
+                                        @if($this->sortColumn === 'created_at')
+                                            @if($this->sortDirection === 'asc')
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                            @else
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($inventoryData as $item)
+                            @foreach($allocations as $allocation)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <input
-                                            type="checkbox"
-                                            wire:model.live="selectedRows"
-                                            value="{{ $item['key'] }}"
-                                            class="w-4 h-4 rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900"
-                                        />
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $allocation->order_number }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                        {{ $item['location'] }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                                            {{ $item['shelf_name'] }}
-                                        </span>
+                                        {{ $allocation->product_name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                        {{ $item['variant_name'] }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                        {{ $item['ethos_id'] }}
+                                        {{ $allocation->product_size ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-right">
-                                        {{ number_format($item['quantity']) }}
+                                        {{ number_format($allocation->quantity) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $allocation->user->name ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $allocation->created_at->format('M d, Y H:i') }}
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+                
+                {{-- Pagination --}}
+                @if($allocations->hasPages())
+                    <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                @if($allocations->onFirstPage())
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed">
+                                        Previous
+                                    </span>
+                                @else
+                                    <button wire:click="previousPage" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50">
+                                        Previous
+                                    </button>
+                                @endif
+                                
+                                @if($allocations->hasMorePages())
+                                    <button wire:click="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50">
+                                        Next
+                                    </button>
+                                @else
+                                    <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed">
+                                        Next
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                                        Showing <span class="font-medium">{{ $allocations->firstItem() }}</span> to <span class="font-medium">{{ $allocations->lastItem() }}</span> of <span class="font-medium">{{ $allocations->total() }}</span> results
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         @endif
     </div>

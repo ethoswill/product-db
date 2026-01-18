@@ -112,7 +112,6 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 \App\Filament\Pages\CustomDashboard::class,
                 \App\Filament\Pages\ProfileSettings::class,
-                \App\Filament\Pages\Creative::class,
                 \App\Filament\Pages\ManageDtfInHousePrints::class,
                 \App\Filament\Pages\QuickCadBuilder::class,
                 \App\Filament\Pages\PoSubmission::class,
@@ -173,10 +172,10 @@ class AdminPanelProvider extends PanelProvider
                         'has_variants',
                         'cad_download',
                     ];
-                    
+
                     // Create CSV content with headers
                     $csvContent = implode(',', $headers) . "\n";
-                    
+
                     // Add sample row with example data
                     $sampleRow = [
                         'Sample Product',
@@ -220,14 +219,14 @@ class AdminPanelProvider extends PanelProvider
                         }
                         return $value;
                     }, $sampleRow)) . "\n";
-                    
+
                     return \Illuminate\Support\Facades\Response::streamDownload(function () use ($csvContent) {
                         echo $csvContent;
                     }, 'product_template.csv', [
                         'Content-Type' => 'text/csv; charset=UTF-8',
                     ]);
                 })->name('resources.products.download-csv-template');
-                
+
                 // Secure CAD file download route
                 Route::get('/media/{media}/download', function (Media $media) {
                     // Check if the media belongs to a product and user has access
@@ -237,15 +236,15 @@ class AdminPanelProvider extends PanelProvider
                         if ($media->collection_name === 'cad_download') {
                             $diskName = $media->disk;
                             $path = $media->getPath();
-                            
+
                             // Use Storage facade for better compatibility
                             $storage = Storage::disk($diskName);
-                            
+
                             // Check if file exists
                             if (!$storage->exists($path)) {
                                 abort(404, 'File not found: ' . $path);
                             }
-                            
+
                             // Create a streamed response for download
                             return new StreamedResponse(function () use ($storage, $path) {
                                 $stream = $storage->readStream($path);
@@ -263,7 +262,7 @@ class AdminPanelProvider extends PanelProvider
                             ]);
                         }
                     }
-                    
+
                     abort(404);
                 })->name('media.download');
             });

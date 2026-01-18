@@ -89,7 +89,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Creative')
                     ->group('Creative')
                     ->icon('heroicon-o-paint-brush')
-                    ->url(fn (): string => \App\Filament\Pages\Creative::getUrl())
+                    //->url(fn (): string => \App\Filament\Pages\Creative::getUrl())
                     ->sort(0)
                     ->visible(fn (): bool => auth()->check()),
                 NavigationItem::make('Patches')
